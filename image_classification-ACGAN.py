@@ -9,8 +9,8 @@ from torch.utils.data import DataLoader
 from torchvision.utils import save_image
 from dataset.cifar import DATASET_GETTERS
 from dataset import losses
-os.makedirs("ACGAN_images_real_cifar10__focalloss", exist_ok=True)
-os.makedirs("ACGAN_images_fake_cifar10__focalloss", exist_ok=True)
+os.makedirs("ACGAN_images_real", exist_ok=True)
+os.makedirs("ACGAN_images_fake", exist_ok=True)
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(device)
 
@@ -173,7 +173,7 @@ def weights_init(m):
         m.bias.data.fill_(0)
 
 
-labeled_dataset, test_dataset = DATASET_GETTERS['SVHN']("C:/Users/30812/Desktop/image_classification_SVHN/SVHN/format-1")
+labeled_dataset, test_dataset = DATASET_GETTERS['SVHN']("../input/dataset/SVHN/format-1")
 
 trainloader = torch.utils.data.DataLoader(labeled_dataset, batch_size=64, num_workers=0, shuffle=True)
 
@@ -225,7 +225,7 @@ def train(datasetLoader):
             labels = labels.to(device)
             images = images.to(device)
             if i / 114 == 1:
-                save_image(images.data, "ACGAN_images_real_cifar10__focalloss/%d(%d).png" % (epoch, i), nrow=8, normalize=True)
+                save_image(images.data, "ACGAN_images_real/%d(%d).png" % (epoch, i), nrow=8, normalize=True)
             real_label = real_labels[i % 10]
             fake_label = fake_labels[i % 10]
 
@@ -257,7 +257,7 @@ def train(datasetLoader):
 
             fakes = gen(noise, sample_labels)
             if i / 114 == 1:
-                save_image(fakes.data, "ACGAN_images_fake_cifar10__focalloss/%d(%d).png" % (epoch, i), nrow=8, normalize=True)
+                save_image(fakes.data, "ACGAN_images_fake/%d(%d).png" % (epoch, i), nrow=8, normalize=True)
             validity_label.fill_(fake_label)
 
             pvalidity, plabels = disc(fakes.detach())
@@ -320,7 +320,7 @@ def train(datasetLoader):
             # fakeClassifierLoss = loss_fn(predictionsfake, fake_cls_one_hot, batch_size)
             fakeClassifierLoss = criterion(predictionsfake, sample_labels)
             fakefeaturesLoss = torch.sum(losses.features_loss(features_fake, features_real)) / batch_size
-            FakeClassifierLoss = (fakeClassifierLoss + fakefeaturesLoss)
+            FakeClassifierLoss = (fakeClassifierLoss + fakefeaturesLoss)*0.1
             FakeClassifierLoss.backward(retain_graph=True)
 
             optimC.step()
