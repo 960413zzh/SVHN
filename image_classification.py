@@ -71,7 +71,7 @@ def ResNet18():
 file = open("image_classification.txt__", "w")
 
 
-labeled_dataset, test_dataset = DATASET_GETTERS['SVHN'](../input/dataset/SVHN/format-1)
+labeled_dataset, test_dataset = DATASET_GETTERS['SVHN']("../input/dataset/SVHN/format-1")
 
 trainloader = torch.utils.data.DataLoader(labeled_dataset, batch_size=64, num_workers=0, shuffle=True)
 
