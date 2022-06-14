@@ -1,11 +1,13 @@
-from torch.utils.data import DataLoader
-from dataset.cifar import DATASET_GETTERS
+import numpy as np
 import torch
-from torch.utils.data import DataLoader,Dataset
+from torch.utils.data import DataLoader
 from torch import optim,nn
 import torch.nn.functional as F
+import torchvision.datasets as datasets
+import torchvision.transforms as transforms
 import torch.utils.data
-
+import matplotlib.pyplot as plt
+import torchvision
 
 # model
 class BasicBlock(nn.Module):
@@ -67,23 +69,55 @@ class ResNet(nn.Module):
 
 def ResNet18():
     return ResNet(BasicBlock, [2,2,2,2])
+#data preprocessing
 
-file = open("image_classification.txt__", "w")
+file = open("cifar10.txt", "w")
+
+batch_size = 64
+transform_train = transforms.Compose([
+    transforms.RandomCrop(32, padding=4),
+    transforms.RandomHorizontalFlip(),
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
+
+transform_test = transforms.Compose([
+    transforms.ToTensor(),
+    transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
+])
+
+# 加载CIFAR10数据集
+trainset = datasets.CIFAR10(
+    root="../input/dataset/cifar-10", train=True, download=False,
+    transform=transform_train)
+trainloader = torch.utils.data.DataLoader(
+    trainset, batch_size=64, shuffle=True, num_workers=0)
+
+testset = datasets.CIFAR10(
+    root="../input/dataset/cifar-10", train=False, download=False,
+    transform=transform_test)
+testloader = torch.utils.data.DataLoader(
+    testset, batch_size=64, shuffle=False, num_workers=0)
+#create subsets
+dataSizeConstant = 1
+valDataFraction = 1
+subset = np.random.permutation([i for i in range(len(trainset))])
+subTrain = subset[:int(len(trainset) * (dataSizeConstant))]
+subTrainSet = datasets.CIFAR10("../input/dataset/cifar-10", train=True, download=False,
+    transform=transform_train)
+subTrainLoader = DataLoader(subTrainSet, batch_size = batch_size, shuffle= False, num_workers= 0, sampler = torch.utils.data.SubsetRandomSampler(subTrain))
 
 
-labeled_dataset, test_dataset = DATASET_GETTERS['SVHN']("../input/dataset/SVHN/format-1")
-
-trainloader = torch.utils.data.DataLoader(labeled_dataset, batch_size=64, num_workers=0, shuffle=True)
-
-test_loader = DataLoader(test_dataset, batch_size=64, shuffle=False, num_workers=0)
-
-
-
+# subset = np.random.permutation([i for i in range(len(trainset))])
+# SubTest = subset[: int(len(trainset) * (dataSizeConstant * valDataFraction))]
+# subTestSet = datasets.SVHN("/content", split = "train", download = True, transform = transform)
+# subTestLoader = DataLoader(subTestSet, batch_size = batch_size, shuffle= False, num_workers= 2, sampler = torch.utils.data.SubsetRandomSampler(SubTest))
+# define device
 device = torch.device("cuda:0")
 
 # data for plotting purposes
 modelLoss = []
-
+testaccuracy = []
 # model
 # model = ResNet(BasicBlock, [2,2,2,2])
 model = ResNet18()
@@ -91,11 +125,11 @@ model.to(device)
 
 opt = optim.Adam(model.parameters(), lr=0.0001, betas=(0.5, 0.999))
 criterion = nn.CrossEntropyLoss()
-
 epochs = 100
+#training starts
 
 def train(datasetLoader):
-  text = ("Datasize: " + str(12000) + "\n")
+  text = ("Datasize: " + str(dataSizeConstant) + "\n")
   file.write(text)
   for epoch in range(epochs):
     model.train()
@@ -108,7 +142,7 @@ def train(datasetLoader):
       inputs, labels = dataiter.next()
       inputs, labels = inputs.to(device), labels.to(device)
 
-      opt.zero_grad()
+      opt.step()
 
       outputs = model(inputs)
       modelLoss = criterion(outputs, labels) # error line
@@ -132,12 +166,13 @@ def train(datasetLoader):
     print("Epoch " + str(epoch) + "Complete")
     print("Loss: " + str(modelLoss.item()))
     validate()
+# validation
 def validate():
   model.eval()
   correct = 0
   total = 0
   with torch.no_grad():
-      for data in test_loader:
+      for data in testloader:
           inputs, labels = data
           inputs, labels = data[0].to(device), data[1].to(device)
           outputs = model(inputs)
@@ -146,12 +181,20 @@ def validate():
           correct += (predicted == labels).sum().item()
 
   accuracy = (correct / total) * 100
-
+  testaccuracy.append(accuracy)
   print('Accuracy of the network on the 10000 test images: %d %%' % (
       100 * correct / total))
 
   text = ("Test Accuracy: " + str(accuracy) + "\n")
   file.write(text)
   model.train()
-train(trainloader)
+train(subTrainLoader)
+
 file.close()
+plt.figure(figsize=(10,5))
+plt.title("test_accuracy")
+plt.plot(testaccuracy, label="test_accuracy")
+plt.xlabel("epoch")
+plt.ylabel("accuracy")
+plt.legend()
+plt.show()
