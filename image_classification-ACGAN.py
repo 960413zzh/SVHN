@@ -162,13 +162,13 @@ transform_test = transforms.Compose([
 ])
 
 # 加载CIFAR10数据集
-trainset = torchvision.datasets.CIFAR10(
+trainset = datasets.CIFAR10(
     root="../input/dataset/cifar-10", train=True, download=False,
     transform=transform_train)
 trainloader = torch.utils.data.DataLoader(
     trainset, batch_size=64, shuffle=True, num_workers=0)
 
-testset = torchvision.datasets.CIFAR10(
+testset = datasets.CIFAR10(
     root="../input/dataset/cifar-10", train=False, download=False,
     transform=transform_test)
 testloader = torch.utils.data.DataLoader(
