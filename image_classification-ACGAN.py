@@ -163,13 +163,13 @@ transform_test = transforms.Compose([
 
 # 加载CIFAR10数据集
 trainset = datasets.CIFAR10(
-    root="../input/dataset/cifar-10", train=True, download=True,
+    root="../input/dataset/cifar-10/cifar-10-python/cifar-10-batches-py", train=True, download=False,
     transform=transform_train)
 trainloader = torch.utils.data.DataLoader(
     trainset, batch_size=64, shuffle=True, num_workers=0)
 
 testset = datasets.CIFAR10(
-    root="../input/dataset/cifar-10", train=False, download=True,
+    root="../input/dataset/cifar-10/cifar-10-python/cifar-10-batches-py", train=False, download=False,
     transform=transform_test)
 testloader = torch.utils.data.DataLoader(
     testset, batch_size=64, shuffle=False, num_workers=0)
@@ -178,7 +178,7 @@ dataSizeConstant = 1
 valDataFraction = 1
 subset = np.random.permutation([i for i in range(len(trainset))])
 subTrain = subset[:int(len(trainset) * (dataSizeConstant))]
-subTrainSet = datasets.CIFAR10("../input/dataset/cifar-10", train=True, download=True,
+subTrainSet = datasets.CIFAR10("../input/dataset/cifar-10/cifar-10-python/cifar-10-batches-py", train=True, download=False,
     transform=transform_train)
 subTrainLoader = DataLoader(subTrainSet, batch_size = batch_size, shuffle= False, num_workers= 0, sampler = torch.utils.data.SubsetRandomSampler(subTrain))
 
